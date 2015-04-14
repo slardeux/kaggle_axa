@@ -4,18 +4,17 @@ author: "Sylvie"
 output: html_document
 ---
 
-My role in the Kaggle Axa Challenge team was to create variable. My approach was to create a good number of variable even if I had to remove them after in the final model. Because I am always wary of losing data or having to go back and recompute everything, I save the intermediate steps data in different folders. It make the computation time a bit longer, however, it avoid to have to recompute every step when I want to make one change in the last step (like changing the number of quantile for example).
+My role in the Kaggle Axa Challenge team was to create variable. My approach was to create a good number of variables even if I had to remove them afterwards, in the final model. Because I am always wary of losing data or having to go back and re-compute everything, I saved the intermediate steps data in different folders. This makes the computation time a bit longer, however, it avoids having to re-compute every step when I want to make one change in the most recent step (like changing the number of quantiles for example).
 
 ![car draw](carred.png)
 
 
-## Creating trip variable
-After loading the csv files and creating a unique data frame with all the trips for each drivers with Julian's code, I calculated a number of variable for each trip after turning the trip so that each trip begin to go up and right (y and x positive).
+## Creating Trip Variables
+After loading the csv files and creating a unique data frame with all the trips for each driver with Julian’s code, I calculated a number of variables (for each trip) after turning the trip so that each trip begins to go up and right (y and x positive).
 
-First I created the directory where the files would be saved.
 ```{r, eval=FALSE}
 library(dplyr)
- 
+```
 
 The main loop of this script call the function expand_data.f (which takes other function as variable) for each drivers.
 ```{r, eval=FALSE}
@@ -25,7 +24,8 @@ foreach(i=1:length(todo)) %dopar% {
   expand_data.f(todo[i], turn_trip.f, calculate_trip_value.f)  
 }
 ```
-The expand\_data.f function load the driver data; split the data so that each trip is an element of a list and applies the turn\_trip.f function and the calculate\_trip\_value.f function.
+The expand\_data.f function loads the driver data; splits the data so that each trip is an element of a list and applies the turn\_trip.f function and the calculate_trip_value.f function.
+
 ```{r, eval=FALSE}
 expand_data.f <- function(x, turn.trip_f, calculate_trip_value.f){
   #this function load the data called the previous function and save the data 
@@ -35,7 +35,9 @@ expand_data.f <- function(x, turn.trip_f, calculate_trip_value.f){
   save(drives, file = paste('data_transf/', x, sep = ''))
 }
 ```
-The turn\_trip.f function turn the trip so that it at the beginning it goes up and right (both y and x positive.)
+
+The turn_trip.f function turns the trip so that at the beginning it goes up and right (both y and x positive.)
+
 ```{r, eval=FALSE}
 turn_trip.f <- function(trip){
   # turn the trip by deciding it begin to go up and right (y>0 and x>0)
@@ -44,9 +46,11 @@ turn_trip.f <- function(trip){
   return(trip)
 }
 ```
-The calculate\_trip\_value.f calculate the distance between two consecutive point, the velocity both in the y axis and in the x axis, the speed, the acceleration, the jerk and the angle change between two points. It also add a boolean flag indicating when there is a 'jump' in the data (i.e. when there is missing points which creates ridiculous values for the variable).
 
-Since I turned the trip so that they begin all in the same direction I then flag the positive and negative turn with booleans. To account for both sharp turn and slow turn I created 3 columns for both the positive and negative turn to looked flag all turn bigger than 45 degree total between two consecutive points, or one point and two point after or between one point and three point after.
+The calculate\_trip_value.f calculates the distance between two consecutive points, the velocity both in the y-axis and in the x-axis, the speed, the acceleration, the jerk, and the angle change between two points. It also adds a boolean flag indicating when there is a ‘jump’ in the data (i.e. when there are missing points, which creates ridiculous values for the variable).
+
+Since I turned the trips so that they began all in the same direction, I then flagged the positive and negative turns with booleans. To account for both sharp turns and slow turns I created three columns for both the positive and negative turns to show flagged all turns having greater than 45-degrees total between two consecutive points, or one point and two points after or between one point and three points after.
+
 ```{r, eval=FALSE} 
 calculate_trip_value.f <- function(trip){
   #this function calculate vel, speed accel, put a flag if data are bad and put a flag when car is moving
@@ -68,14 +72,16 @@ calculate_trip_value.f <- function(trip){
 
 For example this is what the data looks like after adding these variable:
 ```{r, echo=FALSE}
-load('data_transf/DriverData1')
+load('DriverDatatransf1')
 drives[[1]][4:5,]
 ```
 
 ![car draw](carblue.png)
 
-## Summarising the trips
-For each trip, I then summarized all the variable calculated in the previous step and created new value to describe each trip.
+## Summarizing the Trips
+
+For each trip, I then summarized all the variables calculated in the previous step and created new values to describe each trip.
+
 ```{r, eval=FALSE}
 library(plyr)
 library(dplyr)
@@ -84,7 +90,9 @@ library(tidyr)
 library(doParallel)
 dir.create("./data_summary/", showWarnings = TRUE, recursive = FALSE)
 ```
-As previously, the main loop call the main function find\_feature.f which load the data, call the function trip\_feature. f for each trip and combine the results in a data frame for each driver.
+
+As previously, the main loop calls the main function find\_feature.f, which loads the data, calls the function trip_feature. f for each trip and combines the results in a data frame for each driver.
+
 ```{r, eval=FALSE}
 todo <- list.files('data_transf')
 registerDoParallel(cores=6)
@@ -98,7 +106,9 @@ find_feature.f <- function(x, trip_feature.f){
   save(drives, file = paste('data_summary/', x, sep = ''))
 }
 ```
-The trip_feature.f calculate the mean, standard deviation and quantile of the velocities, speed, acceleration, jerk and angle variables, and count the number of turns in each direction. This function calculate also trips variable: the length of the trip, the total distance driven, the direct distance between first and last point and the path efficiency (direct distance / total distance), the angle from first to last point, the angle change, the absolute total angle turned and the turn efficiency (angle change / total angle turned).
+
+The trip_feature.f calculates the mean, standard deviation and quartile of the velocities, speed, acceleration, jerk and angle variables, and counts the number of turns in each direction. This function also calculates trip variables: the length of the trip, the total distance driven, the direct distance between first and last point, and the path efficiency (direct distance / total distance), the angle from first to last point, the angle change, the absolute total angle turned and the turn efficiency (angle change / total angle turned).
+
 ```{r, eval=FALSE}
 trip_feature.f <- function(trip){
   #this function summarise the variable value for each trip and create new variable for each trip
@@ -137,10 +147,12 @@ trip_feature.f <- function(trip){
 ```
 
 ```{r, echo=FALSE}
-load('data_summary/DriverData1')
+load('DriverData1')
 
 ```
-At that point we have `r length(drives) - 1` variable to describe each trip.
+
+At that point we have 56  `r length(drives) - 1` variables to describe each trip.
+
 ```{r, echo=FALSE}
 head(drives, 2)
 ```
@@ -148,7 +160,7 @@ head(drives, 2)
 ![car draw](cargreen.png)
 
 ## Model: lasso
-To check if the variable I chose could be useful, I decided to test a lasso regression as the number of variable was quite high. To do so, I first took 5 random drivers to be used as control data.
+To check if the variables I chose could be useful I decided to test a lasso regression because the number of variables was quite high. To do so, I first took five random drivers to be used as control data.
 
 ```{r, eval=FALSE}
 drivers = list.files("data_summary")
@@ -168,7 +180,7 @@ target <- 1
 refData$target <-target  
 ```
 
-Then I mixed the current driver data with the control data and try to predict whether the trip of the current driver belong to him or not. This model showed that the variable were interesting to predict whether the trips were driven by the main driver since a simple lasso model with them scored 0.761.
+Then I mixed the current driver data with the control data and tried to predict whether the trip of the current driver belonged to him or not. This model showed that the variables were indeed interesting to predict whether the trips were driven by the main driver, since a simple lasso model with them scored 0.761.
 
 ```{r, eval=FALSE}
 target <- 0
